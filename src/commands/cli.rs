@@ -10,7 +10,7 @@ pub struct Cli {
     pub verbose: Verbosity<InfoLevel>,
 
     #[command(subcommand)]
-    command: Commands,
+    sub_commands: Commands,
 }
 
 #[derive(Subcommand, Debug)]
@@ -22,7 +22,7 @@ enum Commands {
 
 impl Cli {
     pub fn exec(&self) -> Result<()> {
-        match &self.command {
+        match &self.sub_commands {
             Commands::Run(cli) => cli.run(),
             Commands::Filter(cli) => cli.filter(),
             Commands::Test(cli) => cli.exec(),

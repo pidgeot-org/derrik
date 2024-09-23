@@ -16,7 +16,7 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 enum Commands {
     Run(super::run::Cli),
-    Read(super::read::Cli),
+    Filter(super::filter::Cli),
     Test(super::test::Cli),
 }
 
@@ -24,9 +24,8 @@ impl Cli {
     pub fn exec(&self) -> Result<()> {
         match &self.command {
             Commands::Run(cli) => cli.run(),
-            Commands::Read(cli) => cli.read(),
+            Commands::Filter(cli) => cli.filter(),
             Commands::Test(cli) => cli.exec(),
-            
         }
     }
 }

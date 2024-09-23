@@ -15,7 +15,7 @@ pub struct Cli {
 }
 
 impl Cli {
-    pub fn read(&self) -> Result<()> {
+    pub fn filter(&self) -> Result<()> {
         // Get the file.txt path
         // Check if the file.txt exists
         // Print the content

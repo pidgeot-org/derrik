@@ -56,10 +56,11 @@ impl Cli {
             .expect("The file path doesn't exist");
         // println!("With text:\n{contents}");
         if let Some(s) = &self.text_key {
-            println!("2. If let: {}", s);
+            println!("--text-key: {}", s);
         }
-        //let Some(s) = &self.text_key;
-        let text_key: &String = &self.text_key.as_ref().unwrap();
+        let error_message = String::from("Error");
+        //let text_key: &String = &self.text_key.as_ref().unwrap_or(&error_message);
+        let text_key: &String = &self.text_key.as_ref().unwrap_or_else(|| { return &error_message; });
         println!("--text-key: {text_key}");
         exit(0);
     }

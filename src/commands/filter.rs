@@ -90,3 +90,163 @@ impl Cli {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    fn create_test_file(content: &str) -> NamedTempFile {
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, "{}", content).unwrap();
+        file
+    }
+
+    #[test]
+    fn test_filter_contains() -> Result<()> {
+        // Create a temporary input file
+        let json_content = r#"{"name": "John Doe", "age": 30}"#;
+        let input_file = create_test_file(json_content);
+        let output_file = NamedTempFile::new()?;
+
+        let cli = Cli {
+            input_files: vec![input_file.path().to_path_buf()],
+            _where: vec!["name".to_string()],
+            operator: Some(Operator::Contains),
+            what: "John".to_string(),
+            output: Some(output_file.path().to_path_buf()),
+        };
+
+        cli.filter()?;
+
+        let output_content = fs::read_to_string(output_file.path())?;
+        assert!(output_content.contains(json_content));
+
+        let cli = Cli {
+            input_files: vec![input_file.path().to_path_buf()],
+            _where: vec!["name".to_string()],
+            operator: Some(Operator::Contains),
+            what: "john".to_string(),
+            output: Some(output_file.path().to_path_buf()),
+        };
+
+        cli.filter()?;
+
+        let output_content = fs::read_to_string(output_file.path())?;
+        assert!(output_content.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_filter_icontains() -> Result<()> {
+        let json_content = r#"{"name": "John Doe", "age": 30}"#;
+        let input_file = create_test_file(json_content);
+        let output_file = NamedTempFile::new()?;
+
+        let cli = Cli {
+            input_files: vec![input_file.path().to_path_buf()],
+            _where: vec!["name".to_string()],
+            operator: Some(Operator::Icontains),
+            what: "john".to_string(), // Note: lowercase
+            output: Some(output_file.path().to_path_buf()),
+        };
+
+        cli.filter()?;
+
+        let output_content = fs::read_to_string(output_file.path())?;
+        assert!(output_content.contains(json_content));
+        Ok(())
+    }
+
+    #[test]
+    fn test_filter_no_match() -> Result<()> {
+        let json_content = r#"{"name": "John Doe", "age": 30}"#;
+        let input_file = create_test_file(json_content);
+        let output_file = NamedTempFile::new()?;
+
+        let cli = Cli {
+            input_files: vec![input_file.path().to_path_buf()],
+            _where: vec!["name".to_string()],
+            operator: Some(Operator::Contains),
+            what: "Alice".to_string(),
+            output: Some(output_file.path().to_path_buf()),
+        };
+
+        cli.filter()?;
+
+        let output_content = fs::read_to_string(output_file.path())?;
+        assert!(output_content.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_filter_multiple_fields() -> Result<()> {
+        let json_content = r#"{"name": "John Doe", "description": "Software Engineer"}"#;
+        let input_file = create_test_file(json_content);
+        let output_file = NamedTempFile::new()?;
+
+        let cli = Cli {
+            input_files: vec![input_file.path().to_path_buf()],
+            _where: vec!["name".to_string(), "description".to_string()],
+            operator: Some(Operator::Contains),
+            what: "Engineer".to_string(),
+            output: Some(output_file.path().to_path_buf()),
+        };
+
+        cli.filter()?;
+
+        let output_content = fs::read_to_string(output_file.path())?;
+        assert!(output_content.contains(json_content));
+        Ok(())
+    }
+
+    #[test]
+    fn test_filter_multiple_files() -> Result<()> {
+        let json_content1 = r#"{"name": "John Doe", "age": 30}"#;
+        let json_content2 = r#"{"name": "Jane Doe", "age": 25}"#;
+        let input_file1 = create_test_file(json_content1);
+        let input_file2 = create_test_file(json_content2);
+        let output_file = NamedTempFile::new()?;
+
+        let cli = Cli {
+            input_files: vec![
+                input_file1.path().to_path_buf(),
+                input_file2.path().to_path_buf(),
+            ],
+            _where: vec!["name".to_string()],
+            operator: Some(Operator::Contains),
+            what: "Doe".to_string(),
+            output: Some(output_file.path().to_path_buf()),
+        };
+
+        cli.filter()?;
+
+        let output_content = fs::read_to_string(output_file.path())?;
+        assert!(output_content.contains(json_content1));
+        assert!(output_content.contains(json_content2));
+        Ok(())
+    }
+
+    #[test]
+    fn test_filter_invalid_json() -> Result<()> {
+        let invalid_json = r#"{"name": "John Doe", age: 30}"#; // Missing quotes around age
+        let input_file = create_test_file(invalid_json);
+        let output_file = NamedTempFile::new()?;
+
+        let cli = Cli {
+            input_files: vec![input_file.path().to_path_buf()],
+            _where: vec!["name".to_string()],
+            operator: Some(Operator::Contains),
+            what: "John".to_string(),
+            output: Some(output_file.path().to_path_buf()),
+        };
+
+        cli.filter()?;
+
+        let output_content = fs::read_to_string(output_file.path())?;
+        assert!(output_content.is_empty());
+        Ok(())
+    }
+}
